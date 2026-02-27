@@ -1,29 +1,29 @@
 package com.pcagrade.retriever.card.pokemon.source.pokecardex;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pcagrade.retriever.PCAUtils;
 import com.pcagrade.retriever.cache.CacheService;
-import jakarta.annotation.Nonnull;
-import org.apache.commons.collections4.CollectionUtils;
+import com.pcagrade.retriever.parser.RetrieverHTTPHelper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.htmlunit.WebClient;
-import org.htmlunit.html.HtmlPage;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.io.IOException;
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @Component
 @CacheConfig(cacheNames = "pokecardexComParser")
@@ -31,9 +31,11 @@ public class PokecardexComParser {
 
     private static final Logger LOGGER = LogManager.getLogger(PokecardexComParser.class);
 
-    private static final String CARD_ANCHOR_SELECTOR = "div.serie-details-carte>a";
-    private static final String CARD_NAME_DIV_SELECTOR = "div.serie-details-nom-carte";
-    private static final int JS_WAIT_MS = 10000;
+    private static final String ENCRYPTION_KEY = "oe61R0RgVTJm9omokoKuRem2N2GUbUZ8";
+    private static final Pattern ENCRYPTED_DATA_PATTERN =
+            Pattern.compile("window\\.__INITIAL_DATA_ENCRYPTED__\\s*=\\s*(\\{[^;]+\\});");
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Autowired
     private CacheService cacheService;
@@ -41,85 +43,71 @@ public class PokecardexComParser {
     @Value("${pokecardex-com.url}")
     private String pokecardexUrl;
 
+    private final WebClient webClient;
+
+    public PokecardexComParser(@Value("${retriever.web-client.max-in-memory-size:10MB}") String maxInMemorySize) {
+        this.webClient = WebClient.builder()
+                .exchangeStrategies(RetrieverHTTPHelper.createExchangeStrategies(maxInMemorySize))
+                .clientConnector(RetrieverHTTPHelper.createReactorClientHttpConnector("pokecardex-connection-provider", 5))
+                .build();
+    }
+
     @Cacheable
     public Map<String, String> parse(String code) {
-        var anchorsNames = parseAnchors(code);
-        var divNames = parseNameDivs(code);
-        var result = new HashMap<>(anchorsNames);
-
-        divNames.forEach((key, value) -> result.merge(key, value, (v1, v2) -> v1));
-        return result;
-    }
-
-    public Map<String, String> parseAnchors(String code) {
-        return listElements(code, CARD_ANCHOR_SELECTOR).stream()
-                .map(a -> a.attr("title"))
-                .filter(StringUtils::isNotBlank)
-                .map(PokecardexComParser::createPair)
-                .filter(p -> StringUtils.isNotBlank(p.getLeft()) && StringUtils.isNotBlank(p.getRight()))
-                .collect(PCAUtils.toMap());
-    }
-
-    public Map<String, String> parseNameDivs(String code) {
-        return listElements(code, CARD_NAME_DIV_SELECTOR).stream()
-                .map(Element::text)
-                .filter(StringUtils::isNotBlank)
-                .map(PokecardexComParser::createPair)
-                .filter(p -> StringUtils.isNotBlank(p.getLeft()) && StringUtils.isNotBlank(p.getRight()))
-                .collect(PCAUtils.toMap());
-    }
-
-    @Nonnull
-    private static Pair<String, String> createPair(String name) {
-        var index = name.lastIndexOf(" ");
-
-        return Pair.of(name.substring(index + 1), PCAUtils.clean(name.substring(0, index)));
-    }
-
-    private List<Element> listElements(String code, String selector) {
         try {
             var url = pokecardexUrl + "series/" + code;
-            var html = cacheService.getOrRequestCachedPage(url, () -> fetchWithHtmlUnit(url)).block();
+            var html = cacheService.getOrRequestCachedPage(url, () -> webClient.get()
+                            .uri(url)
+                            .retrieve()
+                            .bodyToMono(String.class))
+                    .block();
 
             if (StringUtils.isBlank(html)) {
-                return Collections.emptyList();
+                return Collections.emptyMap();
             }
 
-            var body = Jsoup.parse(html).body();
-            var value = body.select(selector);
-
-            if (CollectionUtils.isEmpty(value)) {
-                return Collections.emptyList();
+            var matcher = ENCRYPTED_DATA_PATTERN.matcher(html);
+            if (!matcher.find()) {
+                LOGGER.warn("No encrypted data found in pokecardex page for code {}", code);
+                return Collections.emptyMap();
             }
-            return value;
+
+            var encryptedJson = matcher.group(1);
+            var encryptedNode = OBJECT_MAPPER.readTree(encryptedJson);
+            var iv = Base64.getDecoder().decode(encryptedNode.get("iv").asText());
+            var data = Base64.getDecoder().decode(encryptedNode.get("data").asText());
+
+            var keyBytes = ENCRYPTION_KEY.getBytes(StandardCharsets.UTF_8);
+            var secretKey = new SecretKeySpec(keyBytes, "AES");
+            var ivSpec = new IvParameterSpec(iv);
+
+            var cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+            var decrypted = new String(cipher.doFinal(data), StandardCharsets.UTF_8);
+
+            var jsonNode = OBJECT_MAPPER.readTree(decrypted);
+            var cartes = jsonNode.get("cartes");
+
+            if (cartes == null || !cartes.isArray()) {
+                LOGGER.warn("No 'cartes' array found in decrypted data for code {}", code);
+                return Collections.emptyMap();
+            }
+
+            var result = new HashMap<String, String>();
+            for (JsonNode carte : cartes) {
+                var numCard = carte.has("num_card") ? carte.get("num_card").asText() : null;
+                var nameCardFr = carte.has("name_card_fr") ? carte.get("name_card_fr").asText() : null;
+                var total = carte.has("total") ? carte.get("total").asText() : null;
+
+                if (StringUtils.isNotBlank(numCard) && StringUtils.isNotBlank(nameCardFr) && StringUtils.isNotBlank(total)) {
+                    result.put(numCard + "/" + total, PCAUtils.clean(nameCardFr));
+                }
+            }
+            return result;
         } catch (Exception e) {
             LOGGER.error("Failed to parse pokecardex page for code {}", code, e);
-            return Collections.emptyList();
+            return Collections.emptyMap();
         }
-    }
-
-    @Nonnull
-    private Mono<String> fetchWithHtmlUnit(String url) {
-        return Mono.fromCallable(() -> {
-            try (var webClient = new WebClient()) {
-                webClient.getOptions().setJavaScriptEnabled(true);
-                webClient.getOptions().setCssEnabled(false);
-                webClient.getOptions().setThrowExceptionOnScriptError(false);
-                webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-                webClient.getOptions().setPrintContentOnFailingStatusCode(false);
-
-                // Suppress HtmlUnit verbose logging
-                java.util.logging.Logger.getLogger("org.htmlunit").setLevel(java.util.logging.Level.OFF);
-                java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(java.util.logging.Level.OFF);
-
-                HtmlPage page = webClient.getPage(url);
-                webClient.waitForBackgroundJavaScript(JS_WAIT_MS);
-
-                return page.asXml();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to fetch page with HtmlUnit: " + url, e);
-            }
-        });
     }
 
     public String getUrl(String code) {

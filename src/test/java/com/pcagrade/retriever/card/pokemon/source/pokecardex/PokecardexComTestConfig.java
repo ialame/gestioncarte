@@ -12,7 +12,7 @@ public class PokecardexComTestConfig {
 
     @Bean
     public PokecardexComParser pokecardexComParser() {
-        return new PokecardexComParser();
+        return new PokecardexComParser("10MB");
     }
 
     @Bean
