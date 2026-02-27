@@ -109,7 +109,7 @@ public class PokemonCardImageService {
             if (imageDTO == null) {
                 imageDTO = imageService.create("cards/pokemon/", image.url(), image.internal(), getRawImage(image));
             }
-            cardImageService.saveCardImage(new CardImageDTO(cardId, image.localization(), imageDTO.id()));
+            cardImageService.saveCardImage(new CardImageDTO(cardId, image.localization().name(), imageDTO.id(), imageDTO.path()));
         } catch (Exception e) {
             LOGGER.error("Failed to set image for card {}", cardId, e);
         }

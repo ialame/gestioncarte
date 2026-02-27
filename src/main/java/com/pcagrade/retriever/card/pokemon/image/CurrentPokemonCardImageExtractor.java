@@ -26,7 +26,7 @@ public class CurrentPokemonCardImageExtractor implements IPokemonCardImageExtrac
     @Override
     public List<ExtractedImageDTO> getImages(PokemonCardDTO card, Localization localization) {
         return cardImageService.findAllByCardId(card.getId()).stream()
-                .filter(i -> i.localization() == localization)
+                .filter(i -> localization.name().equals(i.localization()))
                 .<ExtractedImageDTO>mapMulti((i, downstream) -> imageService.findById(i.imageId()).ifPresent(image -> downstream.accept(new ExtractedImageDTO(localization, NAME, publicUrlService.buildPublicUrl(image.path()), image.internal(), null))))
                 .toList();
     }
