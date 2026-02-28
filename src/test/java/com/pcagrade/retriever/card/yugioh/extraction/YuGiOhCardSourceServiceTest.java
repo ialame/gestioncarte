@@ -1,26 +1,22 @@
 package com.pcagrade.retriever.card.yugioh.extraction;
 
+import com.pcagrade.retriever.annotation.RetrieverTest;
 import com.pcagrade.retriever.card.yugioh.set.YuGiOhSetDTO;
 import com.pcagrade.retriever.card.yugioh.set.translation.YuGiOhSetTranslationDTO;
 import com.pcagrade.retriever.card.yugioh.source.official.pid.OfficialSitePidDTO;
 import com.pcagrade.retriever.card.yugioh.source.yugipedia.set.YugipediaSetDTO;
 import com.pcagrade.mason.localization.Localization;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@SpringBootTest
-@Transactional
+@RetrieverTest(YuGiOhCardSourceServiceTestConfig.class)
 class YuGiOhCardSourceServiceTest {
 
     @Autowired

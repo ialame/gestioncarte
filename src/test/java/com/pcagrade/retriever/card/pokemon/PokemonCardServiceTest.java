@@ -1,21 +1,19 @@
 package com.pcagrade.retriever.card.pokemon;
 
 import com.github.f4b6a3.ulid.Ulid;
+import com.pcagrade.retriever.annotation.RetrieverTest;
 import com.pcagrade.retriever.params.provider.JsonSource;
 import com.pcagrade.mason.ulid.UlidHelper;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+@RetrieverTest(PokemonCardServiceTestConfig.class)
 class PokemonCardServiceTest {
 
     @Autowired
-    private PokemonCardService pokemonCardService;
+    private IPokemonCardService pokemonCardService;
 
     @ParameterizedTest
     @JsonSource({"RET-174", "RET-202"})

@@ -1,6 +1,7 @@
 package com.pcagrade.retriever.card.pokemon;
 
 import com.github.f4b6a3.ulid.Ulid;
+import com.github.f4b6a3.ulid.UlidCreator;
 import com.pcagrade.retriever.RetrieverTestUtils;
 import com.pcagrade.retriever.TestUlidProvider;
 import com.pcagrade.retriever.annotation.RetrieverTestConfiguration;
@@ -15,6 +16,7 @@ import com.pcagrade.mason.localization.Localization;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -142,6 +144,24 @@ public class PokemonCardRepositoryTestConfig {
         return jp;
     }
 
+    public static final Ulid PIKACHU_RET174_ID = Ulid.from("01GNF8R70XB5KA5Y2JF1HMVN3M");
+
+    public static PokemonCard pikachuRET174() {
+        var card = new PokemonCard();
+
+        card.setId(PIKACHU_RET174_ID);
+        card.setIdPrim("0002700");
+
+        var promo = new PromoCard();
+
+        promo.setId(Ulid.from("01GY4WRP7AZNE7PZ3YYVD36NRR"));
+        promo.setName("Paldea Evolved Elite Trainer Box");
+        promo.setLocalization(Localization.USA);
+        promo.setCard(card);
+        card.setPromoCards(new HashSet<>(Set.of(promo)));
+        return card;
+    }
+
     public static final List<PokemonCard> CARDS;
 
     static {
@@ -157,18 +177,29 @@ public class PokemonCardRepositoryTestConfig {
                 frosmothParticipation().getCard(),
                 frosmothStaff().getCard(),
                 skiddoXY11(),
-                blainesCharmander().getCard()
+                blainesCharmander().getCard(),
+                pikachuRET174()
         );
     }
 
     @Bean
     public PokemonCardRepository pokemonCardRepository() {
-        var repository = RetrieverTestUtils.mockRepository(PokemonCardRepository.class, CARDS, PokemonCard::getId);
+        var mutableCards = new ArrayList<>(CARDS);
+        var repository = RetrieverTestUtils.mockRepository(PokemonCardRepository.class, mutableCards, PokemonCard::getId);
 
+        Mockito.when(repository.save(Mockito.any())).then(invocation -> {
+            var card = invocation.getArgument(0, PokemonCard.class);
+            if (card.getId() == null) {
+                card.setId(UlidCreator.getUlid());
+            }
+            mutableCards.removeIf(c -> Objects.equals(card.getId(), c.getId()));
+            mutableCards.add(card);
+            return card;
+        });
         Mockito.when(repository.findInSet(Mockito.any(Ulid.class))).thenAnswer(invocation -> {
             var setId = invocation.getArgument(0, Ulid.class);
 
-            return CARDS.stream()
+            return mutableCards.stream()
                     .filter(card -> card.getCardSets().stream().anyMatch(set -> set.getId().equals(setId)))
                     .toList();
         });

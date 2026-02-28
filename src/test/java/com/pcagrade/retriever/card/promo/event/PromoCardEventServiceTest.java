@@ -1,18 +1,16 @@
 package com.pcagrade.retriever.card.promo.event;
 
+import com.pcagrade.retriever.annotation.RetrieverTest;
 import com.pcagrade.retriever.card.promo.event.translation.PromoCardEventTranslationDTO;
 import com.pcagrade.mason.localization.Localization;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+@RetrieverTest(PromoCardEventTestConfig.class)
 class PromoCardEventServiceTest {
 
     @Autowired

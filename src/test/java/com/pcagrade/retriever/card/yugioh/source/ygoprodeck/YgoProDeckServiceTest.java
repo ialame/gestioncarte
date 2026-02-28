@@ -1,17 +1,15 @@
 package com.pcagrade.retriever.card.yugioh.source.ygoprodeck;
 
+import com.pcagrade.retriever.annotation.RetrieverTest;
 import com.pcagrade.retriever.card.yugioh.set.YuGiOhSetDTO;
 import com.pcagrade.retriever.card.yugioh.set.translation.YuGiOhSetTranslationDTO;
 import com.pcagrade.mason.localization.Localization;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+@RetrieverTest(YgoProDeckTestConfig.class)
 class YgoProDeckServiceTest {
 
     @Autowired

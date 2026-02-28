@@ -25,7 +25,13 @@ public class FieldMappingTestConfig {
     @Bean
     public FieldMappingRepository fieldMappingRepository() {
         var list = List.of(
-                createFieldMapping(1, "sets.onp.us.code", "(?i)^OP04$", "OP-04", true)
+                createFieldMapping(1, "sets.onp.us.code", "(?i)^OP04$", "OP-04", true),
+                createFieldMapping(2, "test.1", "(?i)^test$", "foo", true),
+                createFieldMapping(3, "test.2", "test", "foo", false),
+                createFieldMapping(4, "test.3", "^test$", "foo", true),
+                createFieldMapping(5, "cards.ygh.rarity", "(?i)^Ultra Rare \\(Pharaoh's Rare\\)$", "URPR", true),
+                createFieldMapping(6, "cards.ygh.rarity", "(?i)^UR \\(PR\\)$", "URPR", true),
+                createFieldMapping(7, "cards.ygh.rarity", "(?i)^UR \\(RF\\)$", "URPR", true)
         );
         var repository = RetrieverTestUtils.mockRepository(FieldMappingRepository.class, list, FieldMapping::getId);
 

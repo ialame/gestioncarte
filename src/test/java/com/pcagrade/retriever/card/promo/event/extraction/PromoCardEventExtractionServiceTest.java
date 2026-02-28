@@ -1,18 +1,16 @@
 package com.pcagrade.retriever.card.promo.event.extraction;
 
 import com.github.f4b6a3.ulid.Ulid;
+import com.pcagrade.retriever.annotation.RetrieverTest;
 import com.pcagrade.retriever.card.promo.PromoCardService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+@RetrieverTest(PromoCardEventExtractionServiceTestConfig.class)
 class PromoCardEventExtractionServiceTest {
 
     private static final Ulid DARKNESS_ABLAZE_STAMPED_ID = Ulid.from("01H5W2EWJGMKT60WP8915VHECR");

@@ -5,6 +5,7 @@ import com.github.f4b6a3.ulid.UlidCreator;
 import com.pcagrade.retriever.RetrieverTestUtils;
 import com.pcagrade.retriever.annotation.RetrieverTestConfiguration;
 import com.pcagrade.retriever.card.TradingCardGame;
+import com.pcagrade.retriever.card.promo.version.translation.PromoCardVersionTranslationMapperImpl;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 
@@ -24,10 +25,20 @@ public class PromoCardVersionTestConfig {
         return version;
     }
 
+    private static PromoCardVersion firstPlace() {
+        var version = new PromoCardVersion();
+
+        version.setId(PromoCardVersionTestProvider.FIRST_PLACE_ID);
+        version.setName("1st Place");
+        version.setTcg(TradingCardGame.POKEMON);
+        return version;
+    }
+
     @Bean
     public PromoCardVersionRepository promoCardVersionRepository() {
         var list = List.of(
-                staff()
+                staff(),
+                firstPlace()
         );
 
         var repository = RetrieverTestUtils.mockRepository(PromoCardVersionRepository.class, list, PromoCardVersion::getId);
@@ -40,5 +51,20 @@ public class PromoCardVersionTestConfig {
                     .toList();
         });
         return repository;
+    }
+
+    @Bean
+    public PromoCardVersionTranslationMapperImpl promoCardVersionTranslationMapper() {
+        return new PromoCardVersionTranslationMapperImpl();
+    }
+
+    @Bean
+    public PromoCardVersionMapper promoCardVersionMapper() {
+        return new PromoCardVersionMapperImpl();
+    }
+
+    @Bean
+    public PromoCardVersionService promoCardVersionService() {
+        return new PromoCardVersionService();
     }
 }

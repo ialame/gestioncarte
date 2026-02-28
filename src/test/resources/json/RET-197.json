@@ -3,17 +3,17 @@
     "translations": {
         "us": {
             "name": "TEST",
-            "available": true,
+
             "localization": "us"
         },
         "fr": {
             "name": "TEST",
-            "available": true,
+
             "localization": "fr"
         },
         "de": {
             "name": "TEST",
-            "available": true,
+
             "localization": "de"
         }
     }

@@ -1,19 +1,15 @@
 package com.pcagrade.retriever.card.yugioh.set.extraction;
 
 import com.pcagrade.mason.localization.Localization;
+import com.pcagrade.retriever.annotation.RetrieverTest;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@SpringBootTest
-@Transactional
+@RetrieverTest(YuGiOhSetExtractionServiceTestConfig.class)
 class YuGiOhSetExtractionServiceTest {
 
     @Autowired

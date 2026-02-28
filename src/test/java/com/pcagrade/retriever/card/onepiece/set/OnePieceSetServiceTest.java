@@ -1,17 +1,15 @@
 package com.pcagrade.retriever.card.onepiece.set;
 
 import com.github.f4b6a3.ulid.Ulid;
+import com.pcagrade.retriever.annotation.RetrieverTest;
 import com.pcagrade.retriever.card.onepiece.set.translation.OnePieceSetTranslationDTO;
 import com.pcagrade.mason.localization.Localization;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+@RetrieverTest(OnePieceSetTestConfig.class)
 public class OnePieceSetServiceTest {
 
     public static final Ulid OP01_ID = Ulid.from("01GXGP22SM1HXDR9GJW9NQDCB4");

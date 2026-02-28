@@ -1,6 +1,8 @@
 package com.pcagrade.retriever.card.promo.event.trait;
 
 import com.github.f4b6a3.ulid.Ulid;
+import com.pcagrade.retriever.annotation.RetrieverTest;
+import com.pcagrade.retriever.card.promo.event.PromoCardEventTestConfig;
 import com.pcagrade.retriever.card.promo.event.trait.translation.PromoCardEventTraitTranslationDTO;
 import com.pcagrade.mason.localization.Localization;
 import org.junit.jupiter.api.Test;
@@ -8,16 +10,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+@RetrieverTest(PromoCardEventTestConfig.class)
 class PromoCardEventTraitServiceTest {
 
     @Autowired
